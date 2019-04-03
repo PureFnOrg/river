@@ -1,0 +1,7 @@
+* org.purefn/river
+  Minimalist Clojure wrapping of the Kafka Consumer API.
+
+  
+
+*** Warning
+  The current stability of this work is pre-alpha, and subject change.
