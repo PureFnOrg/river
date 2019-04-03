@@ -21,11 +21,11 @@
    [com.stuartsierra.component :as component]
    [com.stuartsierra.component.repl :refer [reset set-init start stop system]]
    [org.purefn.kurosawa.log.core :as klog]
-   [org.purefn.river.messaging :as msg]
    [org.purefn.river :as river]
    [org.purefn.river.batch :as batch]
    [org.purefn.river.serdes.nippy :as serdes]
-   [taoensso.timbre :as log])
+   [taoensso.timbre :as log]
+   [clojure.string :as str])
   (:import [java.io File]
            [java.util UUID]
            [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]))
@@ -78,9 +78,14 @@
 ;;--------------------------------------------------------------------------------
 ;; System
 
+(def cr nil)
+
 (defn file-writer
-  [state records commit]
-  (log/info (pr-str (map msg/to-message records))))
+  [{:keys [file]} state records commit]
+  (with-open [w (io/writer file :append true)]
+    (doseq [{:keys [key value]} records]
+      (.write w (str key ":" value "\n"))))
+  (commit))
 
 
 (defn dev-system

@@ -9,14 +9,16 @@
             [taoensso.timbre :as log])
   (:import [org.apache.kafka.clients.consumer KafkaConsumer]
            [org.apache.kafka.common TopicPartition]
-           [org.apache.kafka.common.errors WakeupException]))
+           [org.apache.kafka.common.errors WakeupException]
+           [org.purefn.river Message]))
 
 (defn kafka-consumer
   [group-id servers]
   (KafkaConsumer. {"auto.offset.reset" "earliest"
                    "bootstrap.servers" servers
                    "enable.auto.commit" false
-                   "group.id" group-id}
+                   "group.id" group-id
+                   "client.id" group-id}
                   (serdes/nippy-deserializer)
                   (serdes/nippy-deserializer)))
 
@@ -34,15 +36,23 @@
   [^KafkaConsumer consumer
    ^clojure.lang.Atom closing
    {:keys [::timeout] :as config}
+   dependencies
    process-fn]
-  (log/info consumer)
-  (let [commit #(.commitAsync consumer)]
+  (let [commit #(.commitAsync consumer)
+        pfn (if (= 4 (->> (meta process-fn)
+                          (:arglists)
+                          (map count)
+                          (reduce max)))
+              (partial process-fn dependencies)
+              process-fn)]
     (try
       (loop [state {}]
         (when-not @closing
           (let [records (seq (.poll consumer timeout))
                 next-state (if records
-                             (process-fn state records commit)
+                             (pfn state
+                                  (map #(Message. %) records)
+                                  commit)
                              state)]
             (recur next-state))))
 
@@ -63,19 +73,21 @@
                        (with-out-str)))
         (.close consumer)))))
 
-
 (defrecord BatchConsumer
     [config consumers process-fn]
 
   component/Lifecycle
   (start [this]
-    (log/info config)
     (assoc this
            :consumers
-           (mapv (fn [c]
+           (mapv (fn [consumer]
                   (let [closing (atom false)]
-                    [(future (process c closing config process-fn))
-                     c
+                    [(future (process consumer
+                                      closing
+                                      config
+                                      (dissoc this :config :consumers :process-fn)
+                                      process-fn))
+                     consumer
                      closing]))
                  (create-consumers config))))
 

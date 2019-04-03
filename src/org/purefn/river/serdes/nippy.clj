@@ -71,5 +71,4 @@
      ([opts]
       (->NippySerde opts))))
 
-
  (ns org.purefn.river.serdes.nippy))
