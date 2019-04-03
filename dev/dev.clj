@@ -21,9 +21,11 @@
    [com.stuartsierra.component :as component]
    [com.stuartsierra.component.repl :refer [reset set-init start stop system]]
    [org.purefn.kurosawa.log.core :as klog]
+   [org.purefn.river.messaging :as msg]
    [org.purefn.river :as river]
    [org.purefn.river.batch :as batch]
-   [org.purefn.river.serdes.nippy :as serdes])
+   [org.purefn.river.serdes.nippy :as serdes]
+   [taoensso.timbre :as log])
   (:import [java.io File]
            [java.util UUID]
            [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]))
@@ -69,11 +71,16 @@
   [^Producer producer topic key value]
   (.send (:producer producer) (ProducerRecord. topic key value)))
 
+(defn send-guid
+  []
+  (send-record (:producer system) "firefly" (UUID/randomUUID) (UUID/randomUUID)))
+
 ;;--------------------------------------------------------------------------------
 ;; System
 
 (defn file-writer
-  [state records commit])
+  [state records commit]
+  (log/info (pr-str (map msg/to-message records))))
 
 
 (defn dev-system
@@ -87,7 +94,7 @@
                       ::batch/bootstrap-servers "localhost:9092"
                       ::batch/topics ["firefly"]
                       ::batch/group-id "serenity")
-               file-writer)
+               #'file-writer)
               [:file])
    :file (File. "./simon.txt")
    ))

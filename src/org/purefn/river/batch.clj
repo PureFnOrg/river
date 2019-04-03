@@ -41,8 +41,10 @@
       (loop [state {}]
         (when-not @closing
           (let [records (seq (.poll consumer timeout))
-                next-state (process-fn state records commit)]
-            (recur state))))
+                next-state (if records
+                             (process-fn state records commit)
+                             state)]
+            (recur next-state))))
 
       (catch WakeupException ex
         (when-not @closing
