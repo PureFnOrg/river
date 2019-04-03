@@ -1,7 +1,35 @@
 * org.purefn/river
   Minimalist Clojure wrapping of the Kafka Consumer API.
 
-  
-
 *** Warning
   The current stability of this work is pre-alpha, and subject change.
+
+** Usage
+   Example usage may be found in the [[./dev/dev/clj]] namespace, copied below:
+
+#+BEGIN_SRC clojure
+(defn file-writer
+  [{:keys [file]} state records commit]
+  (with-open [w (io/writer file :append true)]
+    (doseq [{:keys [key value]} records]
+      (.write w (str key ":" value "\n"))))
+  (commit))
+
+
+(defn dev-system
+  "Constructs a system map suitable for interactive development."
+  []
+  (component/system-map
+   ;; TODO
+   :producer (producer)
+   :consumer (component/using
+              (batch/batch-consumer
+               (assoc (batch/default-config)
+                      ::batch/bootstrap-servers "localhost:9092"
+                      ::batch/topics ["firefly"]
+                      ::batch/group-id "serenity")
+               #'file-writer)
+              [:file])
+   :file (File. "./simon.txt")
+   ))
+#+END_SRC
