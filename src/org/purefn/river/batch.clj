@@ -20,8 +20,9 @@
                   (serdes/nippy-deserializer)
                   (serdes/nippy-deserializer)))
 
-(defn consumers
+(defn create-consumers
   [{:keys [::topics ::group-id ::threads ::bootstrap-servers] :as config}]
+  (log/info config)
   (->> (range threads)
        (map (fn [_]
               (log/info "Creating consumer" {:group-id group-id
@@ -32,13 +33,14 @@
 (defn process
   [^KafkaConsumer consumer
    ^clojure.lang.Atom closing
-   {:keys [::poll-timeout] :as config}
+   {:keys [::timeout] :as config}
    process-fn]
+  (log/info consumer)
   (let [commit #(.commitAsync consumer)]
     (try
       (loop [state {}]
         (when-not @closing
-          (let [records (seq (.poll consumer poll-timeout))
+          (let [records (seq (.poll consumer timeout))
                 next-state (process-fn state records commit)]
             (recur state))))
 
@@ -51,7 +53,7 @@
         (throw ex))
 
       (finally
-        (log/info "Closing consumer for\n"
+        (log/info "Closing consumer for"
                   (->> (.assignment consumer)
                        (map (juxt (memfn topic)
                                   (memfn partition)))
@@ -65,25 +67,29 @@
 
   component/Lifecycle
   (start [this]
+    (log/info config)
     (assoc this
            :consumers
            (mapv (fn [c]
                   (let [closing (atom false)]
-                    (future (process c closing config process-fn))
-                    [c closing]))
-                 (consumers config))))
+                    [(future (process c closing config process-fn))
+                     c
+                     closing]))
+                 (create-consumers config))))
 
   (stop [this]
-    (doseq [[c closing] (:consumers this)]
+    (doseq [[f c closing] (:consumers this)]
       (reset! closing true)
-      (.wakeup c))
+      (.wakeup c)
+      (log/info "Waiting for" c "to wakeup")
+      (deref f))
     this))
 
 (defn default-config
   []
   "The default configuration for a batch consumer.
 
-  - `::topics` The topics to write into s3.
+  - `::topics` The topics to consumer from.
 
   - `::bootstrap-servers` hostname:port of a broker in the Kafka cluster to sink from.
 
@@ -97,7 +103,7 @@
 
 (defn batch-consumer
   [config process-fn]
-  {:pre [s/assert* ::config config]}
+  {:pre [(s/assert* ::config config)]}
   (map->BatchConsumer {:config config :process-fn process-fn}))
 
 (s/def ::topic string?)
@@ -105,11 +111,13 @@
 (s/def ::threads pos-int?)
 (s/def ::bootstrap-servers string?)
 (s/def ::group-id string?)
+(s/def ::timeout pos-int?)
 
 (s/def ::config
-  (s/keys :req-un [::bootstrap-servers
-                   ::topics
-                   ::threads
-                   ::group-id]))
+  (s/keys :req [::bootstrap-servers
+                ::timeout
+                ::topics
+                ::threads
+                ::group-id]))
                    
                    

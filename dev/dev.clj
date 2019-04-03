@@ -22,8 +22,10 @@
    [com.stuartsierra.component.repl :refer [reset set-init start stop system]]
    [org.purefn.kurosawa.log.core :as klog]
    [org.purefn.river :as river]
+   [org.purefn.river.batch :as batch]
    [org.purefn.river.serdes.nippy :as serdes])
-  (:import [java.util UUID]
+  (:import [java.io File]
+           [java.util UUID]
            [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]))
 
 ;; Do not try to load source code from 'resources' directory
@@ -45,7 +47,8 @@
                                               (serdes/nippy-serializer))))))
 
   (stop [this]
-    (.close producer)
+    (when producer
+      (.close producer))
     (assoc this :producer nil)))
 
 (defn producer
@@ -69,12 +72,24 @@
 ;;--------------------------------------------------------------------------------
 ;; System
 
+(defn file-writer
+  [state records commit])
+
 
 (defn dev-system
   "Constructs a system map suitable for interactive development."
   []
   (component/system-map
    :producer (producer)
+   :consumer (component/using
+              (batch/batch-consumer
+               (assoc (batch/default-config)
+                      ::batch/bootstrap-servers "localhost:9092"
+                      ::batch/topics ["firefly"]
+                      ::batch/group-id "serenity")
+               file-writer)
+              [:file])
+   :file (File. "./simon.txt")
    ))
 
 (set-init (fn [_] (let [sys (dev-system)]
