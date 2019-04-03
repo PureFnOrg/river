@@ -5,7 +5,7 @@
   The current stability of this work is pre-alpha, and subject change.
 
 ** Usage
-   Example usage may be found in the [[./dev/dev/clj]] namespace, copied below:
+   Example usage may be found in the [[./dev/dev.clj]] namespace, copied below:
 
 #+BEGIN_SRC clojure
 (defn file-writer
