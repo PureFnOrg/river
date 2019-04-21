@@ -39,10 +39,10 @@
 **** Why the java class (org.purefn.river.Message) ?
 
 ***** TL;DR
-Introduce minimal latency while supporting ~clojure.lang.ILookup~ so that the message
-behaves like a hash map.
+To introduce minimal latency while supporting ~clojure.lang.ILookup~ so that the message
+behaves like a Clojure map.
 
-***** The data
+***** Some data
 Testing was done with criterium.  The results for the java class below:
 
 #+BEGIN_EXAMPLE
