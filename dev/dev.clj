@@ -16,16 +16,17 @@
    [clojure.repl :refer [apropos dir doc find-doc pst source]]
    [clojure.set :as set]
    [clojure.string :as string]
+   [clojure.string :as str]
    [clojure.test :as test]
    [clojure.tools.namespace.repl :refer [refresh refresh-all clear]]
    [com.stuartsierra.component :as component]
    [com.stuartsierra.component.repl :refer [reset set-init start stop system]]
+   [criterium.core :as criterium]
    [org.purefn.kurosawa.log.core :as klog]
    [org.purefn.river :as river]
    [org.purefn.river.batch :as batch]
    [org.purefn.river.serdes.nippy :as serdes]
-   [taoensso.timbre :as log]
-   [clojure.string :as str])
+   [taoensso.timbre :as log])
   (:import [java.io File]
            [java.util UUID]
            [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]))
@@ -78,12 +79,26 @@
 ;;--------------------------------------------------------------------------------
 ;; System
 
+(defn to-map
+  [r]
+  {:topic (.topic r)
+   :partition (.partition r)
+   :offset (.offset r)
+   :timestamp (.timestamp r)
+   :timetamp-type (.timestampType r)
+   :serialized-key-size (.serializedKeySize r)
+   :serialized-value-size (.serializedValueSize r)
+   :key (.key r)
+   :value (.value r)
+   :headers (.headers r)})
+
 (def cr nil)
 
 (defn file-writer
   [{:keys [file]} state records commit]
   (with-open [w (io/writer file :append true)]
-    (doseq [{:keys [key value]} records]
+    (doseq [{:keys [key value] :as r} records]
+      (def cr r)
       (.write w (str key ":" value "\n"))))
   (commit))
 

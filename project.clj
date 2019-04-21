@@ -12,9 +12,10 @@
                   [org.purefn/kurosawa.web]]
                  [org.apache.kafka/kafka-clients "2.0.0"]]
   
-  :java-source-paths ["java"] ; Java source is stored separately.
+  :java-source-paths ["java"]
 
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.11"]
                                   [com.stuartsierra/component.repl "0.2.0"]
-                                  [com.taoensso/nippy "2.13.0"]]
+                                  [com.taoensso/nippy "2.13.0"]
+                                  [criterium "0.4.5"]]
                    :source-paths ["dev"]}})

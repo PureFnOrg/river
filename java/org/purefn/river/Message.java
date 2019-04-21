@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import clojure.lang.ILookup;
 import clojure.lang.Keyword;
 
-public class Message extends ConsumerRecord implements ILookup {
+public class Message<K,V> extends ConsumerRecord<K,V> implements ILookup {
 
     private Object fetchKey(Object key) {
 	if (!(key instanceof Keyword)) {
@@ -13,14 +13,26 @@ public class Message extends ConsumerRecord implements ILookup {
 
 	Keyword k = (Keyword) key;
 	switch (k.getName()) {
+	    case "topic":
+		return super.topic();
+	    case "partition":
+		return super.partition();
+	    case "offset":
+		return super.offset();
+	    case "timestamp":
+		return super.timestamp();
+	    case "timestamp-type":
+		return super.timestampType();
+	    case "serialized-key-size":
+		return super.serializedKeySize();
+	    case "serialized-value-size":
+		return super.serializedValueSize();
 	    case "key":
 		return super.key();
 	    case "value":
 		return super.value();
-	    case "partition":
-		return super.partition();
-	    case "topic":
-		return super.topic();
+	    case "headers":
+		return super.headers();
 	}
 
 	return null;
@@ -35,13 +47,17 @@ public class Message extends ConsumerRecord implements ILookup {
 	return val == null ? notFound : val;
     }
 
-    // TODO
-    // ConsumerRecord(java.lang.String topic, int partition, long offset, long timestamp, org.apache.kafka.common.record.TimestampType timestampType, java.lang.Long checksum, int serializedKeySize, int serializedValueSize, K key, V value, Headers headers, java.util.Optional<java.lang.Integer> leaderEpoch)
-    public Message(ConsumerRecord record) {
+    public Message(ConsumerRecord<K,V> record) {
 	super(record.topic(),
 	      record.partition(),
 	      record.offset(),
+	      record.timestamp(),
+	      record.timestampType(),
+	      0L,  // checksum is deprecated as of 0.11
+	      record.serializedKeySize(),
+	      record.serializedValueSize(),
 	      record.key(),
-	      record.value());
+	      record.value(),
+	      record.headers());
     }
 }
