@@ -3,7 +3,7 @@
   (:require [clojure.pprint :as pprint]
             [clojure.spec.alpha :as s]
             [com.stuartsierra.component :as component]
-            ;; temp, remove
+            ;; TODO, remove when serdes is configurable
             [org.purefn.river.serdes.nippy :as serdes]
             ;;----
             [taoensso.timbre :as log])
@@ -19,12 +19,13 @@
                    "enable.auto.commit" false
                    "group.id" group-id
                    "client.id" group-id}
+                  ;; TODO should be configurable
                   (serdes/nippy-deserializer)
                   (serdes/nippy-deserializer)))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads ::bootstrap-servers] :as config}]
-  (log/info config)
+  (log/info "Creating consumers from" config)
   (->> (range threads)
        (map (fn [_]
               (log/info "Creating consumer" {:group-id group-id
@@ -38,7 +39,7 @@
    {:keys [::timeout] :as config}
    dependencies
    process-fn]
-  (let [commit #(.commitAsync consumer)
+  (let [commit #(.commitSync consumer)
         pfn (if (= 4 (->> (meta process-fn)
                           (:arglists)
                           (map count)
@@ -100,7 +101,6 @@
     this))
 
 (defn default-config
-  []
   "The default configuration for a batch consumer.
 
   - `::topics` The topics to consumer from.
@@ -111,13 +111,17 @@
   (default 4)
 
   - `::group-id` The group-id of the conumser group, used when committing offsets."
-
-  {::threads 4
-   ::timeout 10000})
+  ([]
+   (default-config {}))
+  ([config]
+   {::threads 4
+    ::timeout 10000
+    ::bootstrap-servers (get-in config ["kafka" "bootstrap.servers"])}))
 
 (defn batch-consumer
   [config process-fn]
-  {:pre [(s/assert* ::config config)]}
+  {:pre [(s/assert* ::config config)
+         (s/assert* ::process-fn process-fn)]}
   (map->BatchConsumer {:config config :process-fn process-fn}))
 
 (s/def ::topic string?)
@@ -133,5 +137,15 @@
                 ::topics
                 ::threads
                 ::group-id]))
-                   
-                   
+
+(defn process-arity?
+  [f]
+  (->> (meta f)
+       (:arglists)
+       (map count)
+       (some #{3 4})))
+
+(s/def ::process-fn
+  (s/and var?
+         (comp fn? var-get)
+         process-arity?))
