@@ -26,6 +26,7 @@
    [org.purefn.kurosawa.log.core :as klog]
    [org.purefn.river :as river]
    [org.purefn.river.batch :as batch]
+   [org.purefn.river.flush :as flush]
    [org.purefn.river.serdes.nippy :as serdes]
    [taoensso.timbre :as log])
   (:import [java.io File]
@@ -73,6 +74,10 @@
   [^Producer producer topic key value]
   (.send (:producer producer) (ProducerRecord. topic key value)))
 
+(defn send-same-partition
+  []
+  (send-record (:producer system) "firefly" 444 (UUID/randomUUID)))
+
 (defn send-guid
   []
   (send-record (:producer system) "firefly" (UUID/randomUUID) (UUID/randomUUID)))
@@ -103,6 +108,22 @@
       (.write w (str key ":" value "\n"))))
   (commit))
 
+(defn batch-writer
+  [{:keys [file]} records]
+  (with-open [w (io/writer file :append true)]
+    (.write w (reduce
+               (fn [acc {:keys [key value]}]
+                 (str acc key ":" value "\n"))
+               ""
+               records))))
+
+(def processor
+  (-> batch-writer
+      (flush/flush)
+      (flush/record-count 3)
+      (flush/accumulate)
+      )
+  )
 
 (defn dev-system
   "Constructs a system map suitable for interactive development."
@@ -115,7 +136,7 @@
                       ::batch/bootstrap-servers "localhost:9092"
                       ::batch/topics ["firefly"]
                       ::batch/group-id "serenity")
-               #'file-writer)
+               processor)
               [:file])
    :file (File. "./simon.txt")
    ))

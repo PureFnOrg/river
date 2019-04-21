@@ -33,6 +33,14 @@
                 (doto (kafka-consumer group-id bootstrap-servers)
                   (.subscribe topics))))))
 
+(defn max-arg-count
+  [f]
+  {:pre [(instance? clojure.lang.AFunction f)]}
+  (->> (class f)
+       (.getDeclaredMethods)
+       (map (comp alength (memfn getParameterTypes)))
+       (reduce max)))
+
 (defn process
   [^KafkaConsumer consumer
    ^clojure.lang.Atom closing
@@ -40,10 +48,7 @@
    dependencies
    process-fn]
   (let [commit #(.commitSync consumer)
-        pfn (if (= 4 (->> (meta process-fn)
-                          (:arglists)
-                          (map count)
-                          (reduce max)))
+        pfn (if (= 4 (max-arg-count process-fn))
               (partial process-fn dependencies)
               process-fn)]
     (try
@@ -87,7 +92,9 @@
                                       closing
                                       config
                                       (dissoc this :config :consumers :process-fn)
-                                      process-fn))
+                                      (if (var? process-fn)
+                                        (var-get process-fn)
+                                        process-fn)))
                      consumer
                      closing]))
                  (create-consumers config))))
@@ -138,14 +145,9 @@
                 ::threads
                 ::group-id]))
 
-(defn process-arity?
-  [f]
-  (->> (meta f)
-       (:arglists)
-       (map count)
-       (some #{3 4})))
-
 (s/def ::process-fn
-  (s/and var?
-         (comp fn? var-get)
-         process-arity?))
+  (s/or
+   :var (s/and var?
+               (comp #{3 4} max-arg-count var-get))
+   :fn (s/and fn?
+              (comp #{3 4} max-arg-count))))
