@@ -110,6 +110,7 @@
 
 (defn batch-writer
   [{:keys [file]} records]
+  (log/info "got foo" (count records))
   (with-open [w (io/writer file :append true)]
     (.write w (reduce
                (fn [acc {:keys [key value]}]
@@ -120,7 +121,8 @@
 (def processor
   (-> batch-writer
       (flush/flush)
-      (flush/record-count 3)
+      (flush/timed 1000)
+      (flush/max-records 10)
       (flush/accumulate)
       )
   )
@@ -133,10 +135,11 @@
    :consumer (component/using
               (batch/batch-consumer
                (assoc (batch/default-config)
+                      ::batch/timeout 5000
                       ::batch/bootstrap-servers "localhost:9092"
                       ::batch/topics ["firefly"]
                       ::batch/group-id "serenity")
-               processor)
+               #'processor)
               [:file])
    :file (File. "./simon.txt")
    ))

@@ -6,6 +6,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.10.0"]
+                 [clj-time "0.15.0"]
                  [com.stuartsierra/component "0.3.2"]
                  [org.purefn/kurosawa "2.1.4"
                   :exclusions

@@ -48,18 +48,19 @@
    dependencies
    process-fn]
   (let [commit #(.commitSync consumer)
-        pfn (if (= 4 (max-arg-count process-fn))
+        as-fn (if (var? process-fn)
+                (var-get process-fn)
+                process-fn)
+        pfn (if (= 4 (max-arg-count as-fn))
               (partial process-fn dependencies)
               process-fn)]
     (try
       (loop [state {}]
         (when-not @closing
           (let [records (seq (.poll consumer timeout))
-                next-state (if records
-                             (pfn state
-                                  (map #(Message. %) records)
-                                  commit)
-                             state)]
+                next-state (pfn state
+                                (map #(Message. %) records)
+                                commit)]
             (recur next-state))))
 
       (catch WakeupException ex
@@ -92,9 +93,7 @@
                                       closing
                                       config
                                       (dissoc this :config :consumers :process-fn)
-                                      (if (var? process-fn)
-                                        (var-get process-fn)
-                                        process-fn)))
+                                      process-fn))
                      consumer
                      closing]))
                  (create-consumers config))))
