@@ -68,7 +68,11 @@
        (if (and reason records)
          (do
            (log/info "Flushing" :reason reason)
-           (flush-fn deps records)
-           (commit)
-           {})
+           (try 
+             (flush-fn deps records)
+             (commit)
+             {}
+             (catch Exception ex
+               (log/error ex "Failed to flush records")
+               state)))
          state)))))
