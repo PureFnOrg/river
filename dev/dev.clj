@@ -110,7 +110,7 @@
 
 (defn batch-writer
   [{:keys [file]} records]
-  (log/info "got foo" (count records))
+  (log/info "got" (count records))
   (with-open [w (io/writer file :append true)]
     (.write w (reduce
                (fn [acc {:keys [key value]}]
