@@ -1,10 +1,15 @@
 * org.purefn/river
   Minimalist Clojure wrapping of the Kafka Consumer API.
 
+
 *** Warning
   The current stability of this work is pre-alpha, and subject change.
   
 ** Usage
+#+BEGIN_SRC clojure
+[org.purefn/river "0.1.0-SNAPSHOT"] 
+#+END_SRC   
+
    Example usage may be found in the [[./dev/dev.clj]] namespace, copied below:
 
 #+BEGIN_SRC clojure
