@@ -59,9 +59,7 @@ is provided in the dev namespace (copied below):
       (flush/flush)
       (flush/timed 1000)
       (flush/max-records 10)
-      (flush/accumulate)
-      )
-  )
+      (flush/accumulate)))
 #+END_SRC
 
 ** Addendum

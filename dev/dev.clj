@@ -123,9 +123,7 @@
       (flush/flush)
       (flush/timed 1000)
       (flush/max-records 10)
-      (flush/accumulate)
-      )
-  )
+      (flush/accumulate)))
 
 (defn dev-system
   "Constructs a system map suitable for interactive development."
