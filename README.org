@@ -3,7 +3,7 @@
 
 *** Warning
   The current stability of this work is pre-alpha, and subject change.
-
+  
 ** Usage
    Example usage may be found in the [[./dev/dev.clj]] namespace, copied below:
 
@@ -32,6 +32,36 @@
               [:file])
    :file (File. "./simon.txt")
    ))
+#+END_SRC
+
+*** Flush
+
+Experimental.
+
+Functions are provided for composition in [[./src/org/purefn/river/flush.clj]], an example
+is provided in the dev namespace (copied below):
+
+#+BEGIN_SRC clojure
+(require '[org.purefn.river.flush :as flush])
+
+(defn batch-writer
+  [{:keys [file]} records]
+  (log/info "got foo" (count records))
+  (with-open [w (io/writer file :append true)]
+    (.write w (reduce
+               (fn [acc {:keys [key value]}]
+                 (str acc key ":" value "\n"))
+               ""
+               records))))
+
+(def processor
+  (-> batch-writer
+      (flush/flush)
+      (flush/timed 1000)
+      (flush/max-records 10)
+      (flush/accumulate)
+      )
+  )
 #+END_SRC
 
 ** Addendum

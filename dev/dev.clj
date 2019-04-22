@@ -147,4 +147,3 @@
 (set-init (fn [_] (let [sys (dev-system)]
                     (klog/init-dev-logging sys)
                     sys)))
-

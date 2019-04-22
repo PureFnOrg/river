@@ -36,6 +36,7 @@
         commit)))))
 
 (defn timed
+  "Identifies buffer age as a condition for flushing."
   [processor ms]
   (fn 
     ([state records commit]
