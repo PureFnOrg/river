@@ -7,7 +7,7 @@
   
 ** Usage
 #+BEGIN_SRC clojure
-[org.purefn/river "0.1.0-SNAPSHOT"] 
+[org.purefn/river "0.1.0"] 
 #+END_SRC   
 
    Example usage may be found in the [[./dev/dev.clj]] namespace, copied below:
