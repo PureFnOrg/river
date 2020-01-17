@@ -14,14 +14,17 @@
 
 (defn kafka-consumer
   [group-id servers]
-  (KafkaConsumer. {"auto.offset.reset" "earliest"
-                   "bootstrap.servers" servers
-                   "enable.auto.commit" false
-                   "group.id" group-id
-                   "client.id" group-id}
-                  ;; TODO should be configurable
-;;                  (serdes/nippy-deserializer)
-;;                  (serdes/nippy-deserializer)
+  (KafkaConsumer.
+   {"auto.offset.reset" "earliest"
+    "bootstrap.servers" servers
+    "enable.auto.commit" false
+    "group.id" group-id
+    "client.id" group-id
+    "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
+   ;; TODO should be configurable
+   ;;                  (serdes/nippy-deserializer)
+   ;;                  (serdes/nippy-deserializer)
                   ))
 
 (defn create-consumers
