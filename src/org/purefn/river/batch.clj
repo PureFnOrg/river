@@ -20,17 +20,17 @@
       "bootstrap.servers" bootstrap-servers
       "enable.auto.commit" false
       "group.id" group-id
-      "client.id" group-id}
-     (serdes/nippy-deserializer)
-     (serdes/nippy-deserializer))
+      "client.id" group-id
+      "key.deserializer" (::key.deserializer deserializer)
+      "value.deserializer" (::value.deserializer deserializer)})
     (KafkaConsumer.
      {"auto.offset.reset" "earliest"
       "bootstrap.servers" bootstrap-servers
       "enable.auto.commit" false
       "group.id" group-id
-      "client.id" group-id
-      "key.deserializer" (::key.deserializer deserializer)
-      "value.deserializer" (::value.deserializer deserializer)})))
+      "client.id" group-id}
+     (serdes/nippy-deserializer)
+     (serdes/nippy-deserializer))))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads] :as config}]
