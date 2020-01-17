@@ -20,8 +20,9 @@
                    "group.id" group-id
                    "client.id" group-id}
                   ;; TODO should be configurable
-                  (serdes/nippy-deserializer)
-                  (serdes/nippy-deserializer)))
+;;                  (serdes/nippy-deserializer)
+;;                  (serdes/nippy-deserializer)
+                  ))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads ::bootstrap-servers] :as config}]
