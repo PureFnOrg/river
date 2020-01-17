@@ -13,28 +13,33 @@
            [org.purefn.river Message]))
 
 (defn kafka-consumer
-  [group-id servers]
-  (KafkaConsumer.
-   {"auto.offset.reset" "earliest"
-    "bootstrap.servers" servers
-    "enable.auto.commit" false
-    "group.id" group-id
-    "client.id" group-id
-    "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
-    "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
-   ;; TODO should be configurable
-   ;;                  (serdes/nippy-deserializer)
-   ;;                  (serdes/nippy-deserializer)
-                  ))
+  [{:keys [::group-id ::bootstrap-servers ::deserializer]}]
+  (if deserializer 
+    (KafkaConsumer.
+     {"auto.offset.reset" "earliest"
+      "bootstrap.servers" bootstrap-servers
+      "enable.auto.commit" false
+      "group.id" group-id
+      "client.id" group-id}
+     (serdes/nippy-deserializer)
+     (serdes/nippy-deserializer))
+    (KafkaConsumer.
+     {"auto.offset.reset" "earliest"
+      "bootstrap.servers" bootstrap-servers
+      "enable.auto.commit" false
+      "group.id" group-id
+      "client.id" group-id
+      "key.deserializer" (::key.deserializer deserializer)
+      "value.deserializer" (::value.deserializer deserializer)})))
 
 (defn create-consumers
-  [{:keys [::topics ::group-id ::threads ::bootstrap-servers] :as config}]
+  [{:keys [::topics ::group-id ::threads] :as config}]
   (log/info "Creating consumers from" config)
   (->> (range threads)
        (map (fn [_]
               (log/info "Creating consumer" {:group-id group-id
                                              :topics topics})
-                (doto (kafka-consumer group-id bootstrap-servers)
+                (doto (kafka-consumer config)
                   (.subscribe topics))))))
 
 (defn max-arg-count
@@ -134,19 +139,31 @@
          (s/assert* ::process-fn process-fn)]}
   (map->BatchConsumer {:config config :process-fn process-fn}))
 
+(defn- class-exists?
+  [s]
+  (try
+    (Class/forName s)
+    (catch ClassNotFoundException ex
+      (log/warn "No class found for name" s))))
+
 (s/def ::topic string?)
 (s/def ::topics (s/coll-of ::topic))
 (s/def ::threads pos-int?)
 (s/def ::bootstrap-servers string?)
 (s/def ::group-id string?)
 (s/def ::timeout pos-int?)
+(s/def ::key.deserializer (comp some? class-exists?))
+(s/def ::value.deserializer (comp some? class-exists?))
+(s/def ::deserializer (s/keys :req [::key.deserializer
+                                    ::value.deserializer]))
 
 (s/def ::config
   (s/keys :req [::bootstrap-servers
                 ::timeout
                 ::topics
                 ::threads
-                ::group-id]))
+                ::group-id]
+          :opt [::deserializer]))
 
 (s/def ::process-fn
   (s/or
