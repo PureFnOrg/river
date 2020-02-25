@@ -13,24 +13,29 @@
            [org.purefn.river Message]))
 
 (defn kafka-consumer
-  [{:keys [::group-id ::bootstrap-servers ::deserializer]}]
-  (if deserializer 
-    (KafkaConsumer.
-     {"auto.offset.reset" "earliest"
-      "bootstrap.servers" bootstrap-servers
-      "enable.auto.commit" false
-      "group.id" group-id
-      "client.id" group-id
-      "key.deserializer" (::key.deserializer deserializer)
-      "value.deserializer" (::value.deserializer deserializer)})
-    (KafkaConsumer.
-     {"auto.offset.reset" "earliest"
-      "bootstrap.servers" bootstrap-servers
-      "enable.auto.commit" false
-      "group.id" group-id
-      "client.id" group-id}
-     (serdes/nippy-deserializer)
-     (serdes/nippy-deserializer))))
+  [{:keys [::group-id ::bootstrap-servers ::deserializer
+  	        ::max-poll-records ::max-poll-interval-ms]}]
+  (let [consumer-conf
+        (cond-> {"auto.offset.reset" "earliest"
+                 "bootstrap.servers" bootstrap-servers
+                 "enable.auto.commit" false
+                 "group.id" group-id
+                 "client.id" group-id}
+
+                max-poll-records 
+                (assoc "max.poll.records" max-poll-records)
+
+                max-poll-interval-ms
+                (assoc "max.poll.interval.ms" max-poll-interval-ms))]
+    (if deserializer 
+      (KafkaConsumer.
+       (assoc consumer-conf 
+              "key.deserializer" (::key.deserializer deserializer)
+              "value.deserializer" (::value.deserializer deserializer)))
+      (KafkaConsumer.
+       consumer-conf       
+       (serdes/nippy-deserializer)
+       (serdes/nippy-deserializer))))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads] :as config}]
@@ -156,6 +161,8 @@
 (s/def ::value.deserializer (comp some? class-exists?))
 (s/def ::deserializer (s/keys :req [::key.deserializer
                                     ::value.deserializer]))
+(s/def ::max-poll-records     pos-int?)
+(s/def ::max-poll-interval-ms pos-int?) 
 
 (s/def ::config
   (s/keys :req [::bootstrap-servers
@@ -163,7 +170,9 @@
                 ::topics
                 ::threads
                 ::group-id]
-          :opt [::deserializer]))
+          :opt [::deserializer
+                ::max-poll-records
+                ::max-poll-interval-ms]))
 
 (s/def ::process-fn
   (s/or
