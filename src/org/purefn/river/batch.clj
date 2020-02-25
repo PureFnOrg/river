@@ -13,6 +13,14 @@
            [org.purefn.river Message]))
 
 (defn kafka-consumer
+  "Given the supplied config, return a KafkaConsumer object with the appropriate settings.
+  If unspecified, the nippy deserializer will be used by default.
+
+  ::group-id             (req) - consumer group id
+  ::bootstrap-servers    (req) - comma separated string of kafka nodes (<host>:<port>)
+  ::deserializer         (opt) - string/value deserializers, defaults to nippy
+  ::max-poll-records     (opt) - max records returned on each call to poll, default 500 
+  ::max-poll-interval-ms (opt) - max time to allow between calls to poll before rebalancing, default 300000 (5 min)"
   [{:keys [::group-id ::bootstrap-servers ::deserializer
            ::max-poll-records ::max-poll-interval-ms]}]
   (let [consumer-conf
