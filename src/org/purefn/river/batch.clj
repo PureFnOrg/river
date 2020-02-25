@@ -35,7 +35,7 @@
       (KafkaConsumer.
        consumer-conf       
        (serdes/nippy-deserializer)
-       (serdes/nippy-deserializer))))
+       (serdes/nippy-deserializer)))))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads] :as config}]
