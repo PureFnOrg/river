@@ -14,13 +14,7 @@
 
 (defn kafka-consumer
   "Given the supplied config, return a KafkaConsumer object with the appropriate settings.
-  If unspecified, the nippy deserializer will be used by default.
-
-  ::group-id             (req) - consumer group id
-  ::bootstrap-servers    (req) - comma separated string of kafka nodes (<host>:<port>)
-  ::deserializer         (opt) - string/value deserializers, defaults to nippy
-  ::max-poll-records     (opt) - max records returned on each call to poll, default 500 
-  ::max-poll-interval-ms (opt) - max time to allow between calls to poll before rebalancing, default 300000 (5 min)"
+  If unspecified, the nippy deserializer will be used by default."
   [{:keys [::group-id ::bootstrap-servers ::deserializer
            ::max-poll-records ::max-poll-interval-ms]}]
   (let [consumer-conf
@@ -147,6 +141,19 @@
     ::bootstrap-servers (get-in config ["kafka" "bootstrap.servers"])}))
 
 (defn batch-consumer
+  "Constructor, takes a config and a 2 arg process-fn.
+
+  config - ::group-id             (req) - The group-id of the conumser group, used when committing offsets.
+           ::bootstrap-servers    (req) - comma separated string of kafka nodes (<host>:<port>)
+           ::topics               (req) - collection of topics the consumer will poll.
+           ::timeout              (opt) - amount of time to wait for a response from the consumer poll.
+           ::threads              (opt) - number of threads/consumers per topic.
+           ::deserializer         (opt) - string/value deserializers, defaults to nippy
+           ::max-poll-records     (opt) - max records returned on each call to poll, default 500 
+           ::max-poll-interval-ms (opt) - max time to allow between calls to poll before rebalancing, default 300000 (5 min)
+
+  process-fn - 2 arg fn that takes a map of dependencies and a collection of record to process. 
+               Called for each batch of records returned by the consumer poll"
   [config process-fn]
   {:pre [(s/assert* ::config config)
          (s/assert* ::process-fn process-fn)]}
