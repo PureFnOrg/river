@@ -14,7 +14,7 @@
 
 (defn kafka-consumer
   [{:keys [::group-id ::bootstrap-servers ::deserializer
-  	        ::max-poll-records ::max-poll-interval-ms]}]
+           ::max-poll-records ::max-poll-interval-ms]}]
   (let [consumer-conf
         (cond-> {"auto.offset.reset" "earliest"
                  "bootstrap.servers" bootstrap-servers
