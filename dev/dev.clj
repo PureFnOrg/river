@@ -136,7 +136,9 @@
                       ::batch/timeout 5000
                       ::batch/bootstrap-servers "localhost:9092"
                       ::batch/topics ["firefly"]
-                      ::batch/group-id "serenity")
+                      ::batch/group-id "serenity"
+                      ::batch/max-poll-records     1
+                      ::batch/max-poll-interval-ms 300000)
                #'processor)
               [:file])
    :file (File. "./simon.txt")

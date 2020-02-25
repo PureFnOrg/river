@@ -25,10 +25,10 @@
                  "client.id" group-id}
 
                 max-poll-records 
-                (assoc "max.poll.records" max-poll-records)
+                (assoc "max.poll.records" (Integer. max-poll-records))
 
                 max-poll-interval-ms
-                (assoc "max.poll.interval.ms" max-poll-interval-ms))]
+                (assoc "max.poll.interval.ms" (Integer. max-poll-interval-ms)))]
     (if deserializer 
       (KafkaConsumer.
        (assoc consumer-conf 
