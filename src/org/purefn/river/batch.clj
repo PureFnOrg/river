@@ -13,24 +13,31 @@
            [org.purefn.river Message]))
 
 (defn kafka-consumer
-  [{:keys [::group-id ::bootstrap-servers ::deserializer]}]
-  (if deserializer 
-    (KafkaConsumer.
-     {"auto.offset.reset" "earliest"
-      "bootstrap.servers" bootstrap-servers
-      "enable.auto.commit" false
-      "group.id" group-id
-      "client.id" group-id
-      "key.deserializer" (::key.deserializer deserializer)
-      "value.deserializer" (::value.deserializer deserializer)})
-    (KafkaConsumer.
-     {"auto.offset.reset" "earliest"
-      "bootstrap.servers" bootstrap-servers
-      "enable.auto.commit" false
-      "group.id" group-id
-      "client.id" group-id}
-     (serdes/nippy-deserializer)
-     (serdes/nippy-deserializer))))
+  "Given the supplied config, return a KafkaConsumer object with the appropriate settings.
+  If unspecified, the nippy deserializer will be used by default."
+  [{:keys [::group-id ::bootstrap-servers ::deserializer
+           ::max-poll-records ::max-poll-interval-ms]}]
+  (let [consumer-conf
+        (cond-> {"auto.offset.reset" "earliest"
+                 "bootstrap.servers" bootstrap-servers
+                 "enable.auto.commit" false
+                 "group.id" group-id
+                 "client.id" group-id}
+
+                max-poll-records 
+                (assoc "max.poll.records" (Integer. max-poll-records))
+
+                max-poll-interval-ms
+                (assoc "max.poll.interval.ms" (Integer. max-poll-interval-ms)))]
+    (if deserializer 
+      (KafkaConsumer.
+       (assoc consumer-conf 
+              "key.deserializer" (::key.deserializer deserializer)
+              "value.deserializer" (::value.deserializer deserializer)))
+      (KafkaConsumer.
+       consumer-conf       
+       (serdes/nippy-deserializer)
+       (serdes/nippy-deserializer)))))
 
 (defn create-consumers
   [{:keys [::topics ::group-id ::threads] :as config}]
@@ -134,6 +141,19 @@
     ::bootstrap-servers (get-in config ["kafka" "bootstrap.servers"])}))
 
 (defn batch-consumer
+  "Constructor, takes a config and a 2 arg process-fn.
+
+  config - ::group-id             (req) - The group-id of the conumser group, used when committing offsets.
+           ::bootstrap-servers    (req) - comma separated string of kafka nodes (<host>:<port>)
+           ::topics               (req) - collection of topics the consumer will poll.
+           ::timeout              (opt) - amount of time to wait for a response from the consumer poll.
+           ::threads              (opt) - number of threads/consumers per topic.
+           ::deserializer         (opt) - string/value deserializers, defaults to nippy
+           ::max-poll-records     (opt) - max records returned on each call to poll, default 500 
+           ::max-poll-interval-ms (opt) - max time to allow between calls to poll before rebalancing, default 300000 (5 min)
+
+  process-fn - 2 arg fn that takes a map of dependencies and a collection of record to process. 
+               Called for each batch of records returned by the consumer poll"
   [config process-fn]
   {:pre [(s/assert* ::config config)
          (s/assert* ::process-fn process-fn)]}
@@ -156,6 +176,8 @@
 (s/def ::value.deserializer (comp some? class-exists?))
 (s/def ::deserializer (s/keys :req [::key.deserializer
                                     ::value.deserializer]))
+(s/def ::max-poll-records     pos-int?)
+(s/def ::max-poll-interval-ms pos-int?) 
 
 (s/def ::config
   (s/keys :req [::bootstrap-servers
@@ -163,7 +185,9 @@
                 ::topics
                 ::threads
                 ::group-id]
-          :opt [::deserializer]))
+          :opt [::deserializer
+                ::max-poll-records
+                ::max-poll-interval-ms]))
 
 (s/def ::process-fn
   (s/or
