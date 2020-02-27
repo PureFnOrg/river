@@ -16,7 +16,7 @@
   :java-source-paths ["java"]
 
   :deploy-repositories
-  [["releases" {:url "https://clojars.org/repo/" :creds :gpg}]]
+  [["releases" {:url "https://repo.clojars.org" :creds :gpg}]]
 
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.11"]
                                   [org.purefn/kurosawa.aws "2.1.4"]
