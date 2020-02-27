@@ -1,4 +1,4 @@
-(defproject org.purefn/river "0.1.2"
+(defproject org.purefn/river "0.1.3-SNAPSHOT"
 
   :description "Minimalist Consumers for Kafka Topics."
   :url "https://github.com/purefnorg/river"
