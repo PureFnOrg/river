@@ -19,9 +19,15 @@
      commit)))
 
 (defn transform
+  "Applies a transducer to the records batch. Use before accumulate."
   [processor xform]
   (fn
-    [deps state records commit]))
+    [deps state records commit]
+    (processor
+     deps
+     state
+     (sequence xform records)
+     commit)))
 
 (defn max-records
   "Identifies a maximum record count flush condition."
