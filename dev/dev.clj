@@ -121,10 +121,13 @@
 (def processor
   (-> batch-writer
       (flush/flush)
+      (flush/seen 5)
       (flush/timed 1000)
       (flush/max-records 10)
       (flush/accumulate)
-      (flush/transform (map :value))))
+      (flush/transform (comp
+                        (filter (constantly false))
+                        (map :value)))))
 
 (defn dev-system
   "Constructs a system map suitable for interactive development."
