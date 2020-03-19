@@ -6,7 +6,7 @@
   (:require [clj-time.core :as t]
             [taoensso.timbre :as log]))
 
-(def stack
+(def ^:private stack
   (comp (partial take 10) conj))
 
 (defn accumulate
