@@ -11,24 +11,15 @@
 
 (defn accumulate
   "Accumulate records into state, and increments a count."
-  ([processor]
-   (fn 
-     [deps state records commit]
-     (processor
-      deps
-      (-> (update state :records concat records)
-          (update :count (fnil + 0) (count records)))
-      []
-      commit)))
-  ([processor xform]
-   (fn 
-     [deps state records commit]
-     (processor
-      deps
-      (-> (update state :records concat records)
-          (update :count (fnil + 0) (count records)))
-      []
-      commit))))
+  [processor]
+  (fn 
+    [deps state records commit]
+    (processor
+     deps
+     (-> (update state :records concat records)
+         (update :count (fnil + 0) (count records)))
+     []
+     commit)))
 
 (defn transform
   "Applies a transducer to the records batch. Updates `:seen` key in state, 
