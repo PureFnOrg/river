@@ -113,17 +113,21 @@
   (log/info "got" (count records))
   (with-open [w (io/writer file :append true)]
     (.write w (reduce
-               (fn [acc {:keys [key value]}]
-                 (str acc key ":" value "\n"))
+               (fn [acc val]
+                 (str acc val "\n"))
                ""
                records))))
 
 (def processor
   (-> batch-writer
       (flush/flush)
+      (flush/seen 5)
       (flush/timed 1000)
       (flush/max-records 10)
-      (flush/accumulate)))
+      (flush/accumulate)
+      (flush/transform (comp
+                        (filter (constantly false))
+                        (map :value)))))
 
 (defn dev-system
   "Constructs a system map suitable for interactive development."
