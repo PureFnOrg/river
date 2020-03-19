@@ -53,7 +53,6 @@
   (fn 
     [deps state records commit]
     (let [cnt (count (:records state))]
-      (log/info :seen state)
       (processor
        deps
        (cond-> state
