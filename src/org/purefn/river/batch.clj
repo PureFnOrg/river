@@ -80,6 +80,7 @@
             (recur next-state))))
 
       (catch WakeupException ex
+        (log/info "Got WakeupException with":closing @closing ex)
         (when-not @closing
           (throw ex)))
 
@@ -88,7 +89,8 @@
         (throw ex))
 
       (finally
-        (log/info "Closing consumer for"
+        (log/info :closing @closing
+                  "Closing consumer for"
                   (->> (.assignment consumer)
                        (map (juxt (memfn topic)
                                   (memfn partition)))
