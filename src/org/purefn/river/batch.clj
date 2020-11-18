@@ -130,7 +130,7 @@
   - `::topics` The topics to consumer from.
 
   - `::bootstrap-servers` hostname:port of a broker in the Kafka cluster to sink from.
-    Prefers the `bootstrap-servers` config item over `bootstrap.servers if both are available.
+    Prefers the `bootstrap-servers` config item over `bootstrap.servers` if both are available.
     Using the `.` version means we cannot override with env vars when needed.`
 
   - `::threads` The number of threads (consumers) to create for each topic. 
