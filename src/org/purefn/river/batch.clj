@@ -130,6 +130,8 @@
   - `::topics` The topics to consumer from.
 
   - `::bootstrap-servers` hostname:port of a broker in the Kafka cluster to sink from.
+    Prefers the `bootstrap-servers` config item over `bootstrap.servers` if both are available.
+    Using the `.` version means we cannot override with env vars when needed.`
 
   - `::threads` The number of threads (consumers) to create for each topic. 
   (default 4)
@@ -140,7 +142,8 @@
   ([config]
    {::threads 4
     ::timeout 10000
-    ::bootstrap-servers (get-in config ["kafka" "bootstrap.servers"])}))
+    ::bootstrap-servers (or (get-in config ["kafka" "bootstrap-servers"])
+                            (get-in config ["kafka" "bootstrap.servers"]))}))
 
 (defn batch-consumer
   "Constructor, takes a config and a 2 arg process-fn.
